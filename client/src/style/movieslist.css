@@ -1,0 +1,17 @@
+div.sc-AxheI {
+  max-width: 1180px;
+  width: 100%;
+  margin: 10px auto;
+}
+
+table{
+  width:100%;
+}
+
+table tr, table thead tr{
+  border: 1px solid black;
+}
+
+table tr td, table thead tr th{
+  padding: 5px;
+}
