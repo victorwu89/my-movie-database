@@ -1,18 +1,21 @@
 import React, { Component } from 'react'
 import api from '../api'
-import { useTable } from 'react-table'
+import { useTable, usePagination } from 'react-table'
 
-import styled from 'styled-components'
+import { Wrapper, Update, Delete } from './styled-components/MoviesListSC'
 import '../style/movieslist.css'
 
-const Wrapper = styled.div`
-    padding: 0 40px 40px 40px;
-`
+class UpdateMovie extends Component {
+  updateMovie = event => {
+      event.preventDefault()
 
-const Delete = styled.div`
-    color: #ff0000;
-    cursor: pointer;
-`
+      window.location.href = `/movies/update/${this.props.id}`
+  }
+
+  render() {
+      return <Update onClick={this.updateMovie}>Update</Update>
+  }
+}
 
 class DeleteMovie extends Component {
     deleteMovie = event => {
@@ -47,23 +50,42 @@ componentDidMount = async () => {
 }
 
 render() {
-    const { movies, isLoading } = this.state
+    const { movies } = this.state
 
     function Table({columns, data}) {
       const {
         getTableProps,
         getTableBodyProps,
-        headerGroups,
-        rows,
         prepareRow,
+        headerGroups,
+        //rows,
+        page,
+        canPreviousPage,
+        canNextPage,
+        pageOptions,
+        pageCount,
+        gotoPage,
+        previousPage,
+        nextPage,
+        setPageSize,
+        state: {pageIndex, pageSize},
       } = useTable({
         columns,
         data,
-      })
+        initialState: {pageIndex: 0}
+      }, usePagination)
 
       // Render the UI for your table
       return (
-        <table {...getTableProps()}>
+      <div>
+        {console.log(JSON.stringify({
+            pageIndex,
+            pageSize,
+            pageCount,
+            canNextPage,
+            canPreviousPage
+          }))}
+          <table {...getTableProps()}>
           <thead>
             {headerGroups.map(headerGroup => (
               <tr {...headerGroup.getHeaderGroupProps()}>
@@ -74,19 +96,65 @@ render() {
             ))}
           </thead>
           <tbody {...getTableBodyProps()}>
-            {rows.map(
-              (row, i) => {
-                prepareRow(row);
-                return (
-                  <tr {...row.getRowProps()}>
-                    {row.cells.map(cell => {
-                      return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
-                    })}
-                  </tr>
-                )}
-            )}
+            {page.map((row, i) => {
+              prepareRow(row)
+              return (
+                <tr {...row.getRowProps()}>
+                  {row.cells.map(cell => {
+                    return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                  })}
+                </tr>
+              )
+            })}
           </tbody>
         </table>
+        <div className="pagination">
+         <button onClick={() => gotoPage(0)} disabled={!canPreviousPage}>
+           {'<<'}
+         </button>{' '}
+         <button onClick={() => previousPage()} disabled={!canPreviousPage}>
+           {'<'}
+         </button>{' '}
+         <button onClick={() => nextPage()} disabled={!canNextPage}>
+           {'>'}
+         </button>{' '}
+         <button onClick={() => gotoPage(pageCount - 1)} disabled={!canNextPage}>
+           {'>>'}
+         </button>{' '}
+         <span>
+           Page{' '}
+           <strong>
+             {pageIndex + 1} of {pageOptions.length }{' '}
+           </strong>
+         </span>
+         <span>
+           | Go to page:{' '}
+           <input
+             type="number"
+             defaultValue={pageIndex + 1}
+             onChange={e => {
+               const page = e.target.value ? Number(e.target.value) - 1 : 0
+               gotoPage(page)
+             }}
+             style={{ width: '100px' }}
+           />
+         </span>{' '}
+         <select
+           value={pageSize}
+           onChange={e => {
+             setPageSize(Number(e.target.value))
+           }}
+         >
+           {[10, 20, 30, 40, 50].map(function(pageSize){
+             return(
+               <option key={pageSize} value={pageSize}>
+                Show {pageSize}
+               </option>
+             )
+           })}
+         </select>
+       </div>
+       </div>
       )
     }
 
@@ -118,6 +186,16 @@ render() {
                 </span>
             )
         }
+      },{
+          Header: '',
+          accessor: 'Update',
+          Cell: function(props) {
+              return (
+                  <span>
+                      <UpdateMovie id={props.row.original._id} />
+                  </span>
+              )
+          },
       }]
 
      let showTable = true
